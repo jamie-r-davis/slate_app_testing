@@ -29,7 +29,7 @@ class GoogleSheetsPublisher:
     def publish(self, test_results: List[BaseTestCase]):
         """Publish test results"""
         STATUS_COL = 2
-        ACTUAL_COL = 8
+        ACTUAL_COL = 9
         cells = []
         for result in test_results:
             idx = int(result.idx)
