@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from textwrap import dedent
 
 
@@ -72,12 +72,18 @@ class BaseTestCase:
         }
         if str(self.actual) == self.expected:
             return True
+        # allows for shorthand existence checking
+        if self.expected == "### EXISTS ###":
+            return self.actual != "### DOES NOT EXIST ###"
         converted = equivalencies.get(str(self.actual), self.actual)
         if isinstance(converted, datetime):
             converted = converted.strftime("%Y-%m-%d %H:%M:%S")
         # handle shorthand syntax for longer responses
         if self.expected.endswith("..."):
             return converted.startswith(self.expected[:-3])
+        # handle cases where gsheets forced a comment on a numeric string
+        if self.expected.startswith("'"):
+            self.expected = self.expected[1:]
         return converted == self.expected
 
     def to_dict(self):
@@ -103,6 +109,10 @@ class BaseTestCase:
         result = db.execute(self.sql).first()
         if result is None:
             actual = "### DOES NOT EXIST ###"
+        elif isinstance(result.actual, (datetime, date)):
+            actual = result.actual.strftime("%Y-%m-%d %H:%M:%S")
+        elif isinstance(result.actual, bool):
+            actual = "1" if result.actual is True else "0"
         else:
             actual = result.actual
         self.store_result(actual)
@@ -119,14 +129,64 @@ class FieldTestCase(BaseTestCase):
         return exports[self.export.lower()]
 
 
+class ApplicationActivity(BaseTestCase):
+    base = "act"
+    record = "activity"
+    join_clause = "join [activity] act on a.[id] = act.[record]"
+
+
+class Address(BaseTestCase):
+    base = "ad"
+    record = "address"
+    join_clause = "join [address] ad on ad.[record] = p.[id]"
+
+
 class Application(BaseTestCase):
     base = "a"
     record = "application"
+
+    @property
+    def sql_export(self):
+        if self.field == "round":
+            return "(select [name] from [lookup.round] where [id] = a.[round])"
+        if self.field == "period":
+            return "(select [name] from [lookup.period] where [id] = (select [period] from [lookup.round] where [id] = a.[round]))"
+        return super().sql_export
 
 
 class ApplicationField(FieldTestCase):
     base = "a"
     record = "application field"
+
+
+class CBO(FieldTestCase):
+    base = "cbo"
+    record = "cbo entity"
+    join_clause = "join [entity] cbo on cbo.[record] = a.[id] and cbo.[entity] = '684a173f-17fc-4f3d-bfe3-df2f1aedc79c'"
+
+
+class Device(BaseTestCase):
+    base = "d"
+    record = "device"
+    join_clause = "join [device] d on d.[record] = p.[id]"
+
+
+class HonorsAndAwards(FieldTestCase):
+    base = "awd"
+    record = "honors and awards"
+    join_clause = "join [entity] awd on awd.[record] = a.[id] and awd.[entity] = 'fba8d67b-f694-4e0d-b189-e3b8dfa2f869'"
+
+
+class Interest(BaseTestCase):
+    base = "int"
+    record = "interests"
+    join_clause = "join [interest] int on int.[record] = p.[id]"
+
+
+class InterestField(FieldTestCase):
+    base = "int"
+    record = "interests"
+    join_clause = "join [interest] int on int.[record] = p.[id]"
 
 
 class Person(BaseTestCase):
@@ -140,45 +200,92 @@ class PersonField(FieldTestCase):
 
 
 class Relation(BaseTestCase):
-    record = "relation"
     base = "r"
+    record = "relation"
     join_clause = "join [relation] r on r.[record] = p.[id]"
+
+    @property
+    def sql_export(self):
+        overridden_fields = ["education_level", "type"]
+        if self.field in overridden_fields:
+            return (
+                f"(select [value] from [lookup.prompt] where [id] = r.[{self.field}])"
+            )
+        return super().sql_export
+
+
+class RelationAddress(BaseTestCase):
+    base = "ra"
+    record = "relation address"
+    join_clause = "join [relation] r on r.[record] = p.[id]\njoin [address] ra on ra.[record] = r.[id]"
 
 
 class RelationField(FieldTestCase):
-    record = "relation field"
     base = "r"
+    record = "relation field"
     join_clause = "join [relation] r on r.[record] = p.[id]"
 
 
-class RelationSchool(BaseTestCase):
-    record = "relation school"
-    base = "rs"
-    join_clause = "join [relation] r on r.[record] = p.[id]\njoin [school] rs on rs.[record] = r.[id]"
+class RelationJob(BaseTestCase):
+    base = "rj"
+    record = "relation job"
+    join_clause = "join [relation] r on r.[record] = p.[id]\njoin [job] rj on rj.[record] = r.[id]"
+
+
+class RelativeEmployee(FieldTestCase):
+    base = "re"
+    record = "relative employee"
+    join_clause = "join [entity] re on a.[id] = re.[record] and re.[entity] = '84401b9b-bd17-4522-a1b5-c70ca539f659'"
 
 
 class School(BaseTestCase):
-    record = "school"
     base = "s"
+    record = "school"
     join_clause = "join school s on s.[record] = p.[id]"
+
+    @property
+    def sql_export(self):
+        export = super().sql_export
+        if self.field == "degree":
+            return f"(select [value] from [lookup.prompt] where [id] = {export})"
+        if self.field == "type":
+            return f"case {export} when 'H' then 'High School' when 'U' then 'Undergraduate' when 'G' then 'Graduate' else null end"
+        return export
+
+
+class RelationSchool(School):
+    base = "rs"
+    record = "relation school"
+    join_clause = "join [relation] r on r.[record] = p.[id]\njoin [school] rs on rs.[record] = r.[id]"
 
 
 class TestScore(BaseTestCase):
+    base = "t"
     record = "test score"
     join_clause = "join [test] t on t.record = p.[id]\njoin [lookup.test] lt on t.[type] = lt.[id]"
 
 
 def build_case(destination, **kwargs):
     destinations = {
+        "activity": ApplicationActivity,
+        "address": Address,
         "application": Application,
         "application field": ApplicationField,
+        "cbos": CBO,
+        "device": Device,
+        "honors & awards": HonorsAndAwards,
+        "interests": Interest,
+        "interests field": InterestField,
         "person": Person,
         "person field": PersonField,
         "school": School,
-        "relation": Relation,
-        "relation field": RelationField,
-        "relation school": RelationSchool,
-        "test score": TestScore,
+        "relationship": Relation,
+        "relationship address": RelationAddress,
+        "relationship field": RelationField,
+        "relationship job": RelationJob,
+        "relationship school": RelationSchool,
+        "relative employee": RelativeEmployee,
+        "test scores": TestScore,
     }
     destination_class = destinations[destination.lower()]
     return destination_class(**kwargs)
