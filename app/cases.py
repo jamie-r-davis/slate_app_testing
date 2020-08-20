@@ -84,6 +84,14 @@ class BaseTestCase:
         # handle cases where gsheets forced a comment on a numeric string
         if self.expected.startswith("'"):
             self.expected = self.expected[1:]
+        # try to coerce expected to float and compare if actual is numeric
+        if isinstance(self.actual, (float, int)):
+            try:
+                expected = float(self.expected)
+            except:
+                pass
+            else:
+                return expected == self.actual
         return converted == self.expected
 
     def to_dict(self):
@@ -262,7 +270,37 @@ class RelationSchool(School):
 class TestScore(BaseTestCase):
     base = "t"
     record = "test score"
-    join_clause = "join [test] t on t.record = p.[id]\njoin [lookup.test] lt on t.[type] = lt.[id]"
+    join_clause = """
+    cross apply (
+      select
+        x.[record],
+        x.[type],
+        x.[date],
+        x.[confirmed],
+        max(x.[total]) as total,
+        max(x.[score1]) as score1,
+        max(x.[score2]) as score2,
+        max(x.[score3]) as score3,
+        max(x.[score4]) as score4,
+        max(x.[score5]) as score5,
+        max(x.[score6]) as score6,
+        max(x.[score7]) as score7,
+        max(x.[score8]) as score8,
+        max(x.[score9]) as score9,
+        max(x.[score10]) as score10,
+        max(x.[score11]) as score11,
+        max(x.[score12]) as score12,
+        max(x.[score13]) as score13,
+        max(x.[score14]) as score14,
+        max(x.[score15]) as score15,
+        max(x.[score16]) as score16,
+        max(x.[score17]) as score17
+      from [test] x
+      where
+        x.[record] = p.[id]
+      group by x.[record], x.[type], x.[date], x.[confirmed]
+    ) as t
+    """
 
 
 def build_case(destination, **kwargs):
