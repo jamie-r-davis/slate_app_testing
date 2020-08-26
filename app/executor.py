@@ -28,7 +28,7 @@ class TestExecutor:
     def add_test_case(self, test_case):
         self.test_cases.append(test_case)
 
-    def get_test_cases(self, statuses=["Untested", "Fail"], filter_func=None):
+    def get_test_cases(self, statuses=["Untested", "Fail", "Error"], filter_func=None):
         raw_cases = self.publisher.get_cases(statuses, filter_func)
         self.test_cases = [build_case(**case) for case in raw_cases]
 
@@ -46,7 +46,7 @@ class TestExecutor:
             self.reset_results()
 
     def run(self, filter_func=None, statuses: List[str] = None):
-        statuses = statuses or ["Untested", "Fail"]
+        statuses = statuses or ["Untested", "Fail", "Error"]
         self.get_test_cases(statuses, filter_func)
         self.run_tests()
         self.publish()

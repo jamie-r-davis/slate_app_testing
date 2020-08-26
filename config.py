@@ -10,4 +10,35 @@ class Config:
     DB_URL = os.getenv("DB_URL")
     GSPREAD_CREDENTIAL = os.getenv("GSPREAD_CREDENTIAL")
     GSPREAD_SHEET_KEY = os.getenv("GSPREAD_SHEET_KEY")
-    GSPREAD_WORKSHEET_NAME = os.getenv("GSPREAD_WORKSHEET_NAME")
+    GSPREAD_WORKSHEET_NAME = "Test Cases"
+    COL_INDEXES = {"status": 2, "actual": 9, "comment": 10}
+
+
+class DefaultConfig(Config):
+    pass
+
+
+class CommonAppConfig(Config):
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COMMONAPP_SHEET_KEY", "1kZZbbbnzxGBDsLIM_2XX27wfHQL_rnSw6FfhTRkXD2s"
+    )
+
+
+class CoalitionConfig(Config):
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COALITION_SHEET_KEY", "1brajclYopMFzAycKeOKWf5-CZk417XZL1C0QH4TRUUA"
+    )
+
+
+class CommonAppTransferConfig(Config):
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COMMONAPP_TRANSFER_SHEET_KEY", "1IPQPZec3R42AEjT0DGGfCs35c6wkmeKO31p071kJLKM"
+    )
+
+
+app_config = {
+    "commonapp": CommonAppConfig,
+    "coalition": CoalitionConfig,
+    "commonapp_transfer": CommonAppTransferConfig,
+    None: DefaultConfig,
+}

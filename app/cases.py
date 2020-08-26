@@ -1,6 +1,10 @@
+import sys
+import traceback
 from dataclasses import dataclass
 from datetime import date, datetime
 from textwrap import dedent
+
+from sqlalchemy.exc import ProgrammingError
 
 
 class BaseTestCase:
@@ -28,6 +32,7 @@ class BaseTestCase:
         self.filters = None if filters is None else filters.replace('"', "'")
         self._status = kwargs.get("status")
         self._executed = False
+        self._exc = None
 
     def __repr__(self):
         return f"<{self.__class__.__name__} idx={self.idx}>"
@@ -107,6 +112,8 @@ class BaseTestCase:
 
     @property
     def status(self):
+        if self._exc:
+            return "Error"
         if self._executed:
             if self.passed:
                 return "Pass"
@@ -114,16 +121,28 @@ class BaseTestCase:
         return "Untested"
 
     def execute(self, db):
-        result = db.execute(self.sql).first()
-        if result is None:
-            actual = "### DOES NOT EXIST ###"
-        elif isinstance(result.actual, (datetime, date)):
-            actual = result.actual.strftime("%Y-%m-%d %H:%M:%S")
-        elif isinstance(result.actual, bool):
-            actual = "1" if result.actual is True else "0"
+        try:
+            result = db.execute(self.sql).first()
+        except ProgrammingError as e:
+            type_, value_, traceback_ = sys.exc_info()
+            exception = traceback.format_exception(
+                type_, value_, traceback_, chain=True
+            )
+            actual = next(
+                filter(lambda x: not x.startswith(" "), exception[1:])
+            ).strip()
+            self._exc = e
         else:
-            actual = result.actual
-        self.store_result(actual)
+            if result is None:
+                actual = "### DOES NOT EXIST ###"
+            elif isinstance(result.actual, (datetime, date)):
+                actual = result.actual.strftime("%Y-%m-%d %H:%M:%S")
+            elif isinstance(result.actual, bool):
+                actual = "1" if result.actual is True else "0"
+            else:
+                actual = result.actual
+        finally:
+            self.store_result(actual)
 
 
 class FieldTestCase(BaseTestCase):

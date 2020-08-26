@@ -4,6 +4,7 @@ from typing import List
 import gspread
 
 from .cases import BaseTestCase
+from .utils import col_to_a1
 
 
 def alias_converter(key):
@@ -11,33 +12,37 @@ def alias_converter(key):
 
 
 class GoogleSheetsPublisher:
-    def __init__(self, credential_path, sheet_key, worksheet_name=None):
+    def __init__(
+        self, credential_path, sheet_key, worksheet_name=None, col_indexes=None
+    ):
         self.credential_path = credential_path
         self.sheet_key = sheet_key
         self.worksheet_name = worksheet_name
         self._client = None
         self._wks = None
+        self.col_indexes = col_indexes or {"status": 2, "actual": 9, "comment": 10}
 
     @classmethod
     def from_config(cls, config):
         return cls(
-            config.GSPREAD_CREDENTIAL,
-            config.GSPREAD_SHEET_KEY,
-            config.GSPREAD_WORKSHEET_NAME,
+            credential_path=config.GSPREAD_CREDENTIAL,
+            sheet_key=config.GSPREAD_SHEET_KEY,
+            worksheet_name=config.GSPREAD_WORKSHEET_NAME,
+            col_indexes=config.COL_INDEXES,
         )
 
     def publish(self, test_results: List[BaseTestCase]):
         """Publish test results"""
-        STATUS_COL = 2
-        ACTUAL_COL = 9
+        status_col = self.col_indexes["status"]
+        actual_col = self.col_indexes["actual"]
         cells = []
         for result in test_results:
             idx = int(result.idx)
-            status_cell = gspread.models.Cell(idx, STATUS_COL, result.status)
-            actual_cell = gspread.models.Cell(idx, ACTUAL_COL, result.actual)
+            status_cell = gspread.models.Cell(idx, status_col, result.status)
+            actual_cell = gspread.models.Cell(idx, actual_col, result.actual)
             cells.append(status_cell)
             cells.append(actual_cell)
-        self.worksheet.update_cells(cells)
+        self.worksheet.update_cells(cells, value_input_option="RAW")
 
     def get_cases(self, statuses=["Untested", "Fail"], filter_func=None):
         records = self.worksheet.get_all_records(numericise_ignore=["all"])
@@ -68,3 +73,16 @@ class GoogleSheetsPublisher:
             else:
                 self._wks = spreadsheet.get_worksheet(0)
         return self._wks
+
+    def reset_tests(self):
+        wks = self.worksheet
+        status_col = self.col_indexes.get("status")
+        actual_col = self.col_indexes.get("actual")
+        cell_list = []
+        for i, row in enumerate(wks.get_all_records()):
+            idx = i + 2
+            if row["Status"]:
+                cell_list.append(gspread.models.Cell(idx, status_col, "Untested"))
+            if row["Actual"]:
+                cell_list.append(gspread.models.Cell(idx, actual_col, ""))
+        wks.update_cells(cell_list, value_input_option="RAW")

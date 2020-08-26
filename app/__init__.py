@@ -3,5 +3,8 @@ from config import Config
 from .executor import TestExecutor
 from .publishers import GoogleSheetsPublisher
 
-publisher = GoogleSheetsPublisher.from_config(Config)
-app = TestExecutor(Config, publisher)
+
+def create_app(config: Config):
+    publisher = GoogleSheetsPublisher.from_config(config)
+    app = TestExecutor(config, publisher)
+    return app
