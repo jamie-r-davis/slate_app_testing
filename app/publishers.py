@@ -42,7 +42,8 @@ class GoogleSheetsPublisher:
             actual_cell = gspread.models.Cell(idx, actual_col, result.actual)
             cells.append(status_cell)
             cells.append(actual_cell)
-        self.worksheet.update_cells(cells, value_input_option="RAW")
+        if cells:
+            self.worksheet.update_cells(cells, value_input_option="RAW")
 
     def get_cases(self, statuses=["Untested", "Fail"], filter_func=None):
         records = self.worksheet.get_all_records(numericise_ignore=["all"])
