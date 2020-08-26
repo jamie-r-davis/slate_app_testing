@@ -13,7 +13,14 @@ class BaseTestCase:
     join_clause = ""
 
     def __init__(
-        self, idx: str, external_id: str, field: str, export: str, expected: str, filters: str = None, **kwargs
+        self,
+        idx: str,
+        external_id: str,
+        field: str,
+        export: str,
+        expected: str,
+        filters: str = None,
+        **kwargs,
     ):
         self.idx = idx
         self.external_id = external_id
@@ -51,6 +58,8 @@ class BaseTestCase:
     def store_result(self, actual) -> None:
         if isinstance(actual, datetime):
             actual = actual.strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(actual, str) and len(actual) > 100:
+            actual = actual[:100]
         self.actual = actual
         self._executed = True
 
@@ -119,8 +128,12 @@ class BaseTestCase:
             result = db.execute(self.sql).first()
         except (DatabaseError, ProgrammingError) as e:
             type_, value_, traceback_ = sys.exc_info()
-            exception = traceback.format_exception(type_, value_, traceback_, chain=True)
-            actual = next(filter(lambda x: not x.startswith(" "), exception[1:])).strip()
+            exception = traceback.format_exception(
+                type_, value_, traceback_, chain=True
+            )
+            actual = next(
+                filter(lambda x: not x.startswith(" "), exception[1:])
+            ).strip()
             self._exc = e
         else:
             if result is None:
@@ -225,7 +238,9 @@ class Relation(BaseTestCase):
     def sql_export(self) -> str:
         overridden_fields = ["education_level", "type"]
         if self.field in overridden_fields:
-            return f"(select [value] from [lookup.prompt] where [id] = r.[{self.field}])"
+            return (
+                f"(select [value] from [lookup.prompt] where [id] = r.[{self.field}])"
+            )
         return super().sql_export
 
 

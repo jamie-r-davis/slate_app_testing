@@ -20,7 +20,9 @@ class DefaultConfig(Config):
 
 class CommonAppConfig(Config):
     TEST_PLAN = "commonapp"
-    GSPREAD_SHEET_KEY = os.getenv("COMMONAPP_SHEET_KEY", "1kZZbbbnzxGBDsLIM_2XX27wfHQL_rnSw6FfhTRkXD2s")
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COMMONAPP_SHEET_KEY", "1kZZbbbnzxGBDsLIM_2XX27wfHQL_rnSw6FfhTRkXD2s"
+    )
 
 
 class PSConfig(CommonAppConfig):
@@ -32,12 +34,16 @@ class PSConfig(CommonAppConfig):
 
 class CoalitionConfig(Config):
     TEST_PLAN = "coalition"
-    GSPREAD_SHEET_KEY = os.getenv("COALITION_SHEET_KEY", "1brajclYopMFzAycKeOKWf5-CZk417XZL1C0QH4TRUUA")
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COALITION_SHEET_KEY", "1brajclYopMFzAycKeOKWf5-CZk417XZL1C0QH4TRUUA"
+    )
 
 
 class CommonAppTransferConfig(Config):
     TEST_PLAN = "commonapp_transfer"
-    GSPREAD_SHEET_KEY = os.getenv("COMMONAPP_TRANSFER_SHEET_KEY", "1IPQPZec3R42AEjT0DGGfCs35c6wkmeKO31p071kJLKM")
+    GSPREAD_SHEET_KEY = os.getenv(
+        "COMMONAPP_TRANSFER_SHEET_KEY", "1IPQPZec3R42AEjT0DGGfCs35c6wkmeKO31p071kJLKM"
+    )
 
 
 app_config = {

@@ -13,7 +13,9 @@ class TestExecutor:
         self.publisher = publisher
         self.results = []
         self.test_cases = []
-        self.case_builder = ps_build_case if config.TEST_PLAN == "peoplesoft" else build_case
+        self.case_builder = (
+            ps_build_case if config.TEST_PLAN == "peoplesoft" else build_case
+        )
 
     @property
     def db(self):
