@@ -3,6 +3,7 @@ from typing import List
 from sqlalchemy import create_engine
 
 from .cases import build_case
+from .ps_cases import build_case as ps_build_case
 
 
 class TestExecutor:
@@ -12,6 +13,7 @@ class TestExecutor:
         self.publisher = publisher
         self.results = []
         self.test_cases = []
+        self.case_builder = ps_build_case if config.TEST_PLAN == "peoplesoft" else build_case
 
     @property
     def db(self):
@@ -30,7 +32,7 @@ class TestExecutor:
 
     def get_test_cases(self, statuses=["Untested", "Fail", "Error"], filter_func=None):
         raw_cases = self.publisher.get_cases(statuses, filter_func)
-        self.test_cases = [build_case(**case) for case in raw_cases]
+        self.test_cases = [self.case_builder(**case) for case in raw_cases]
 
     def execute_case(self, test_case):
         test_case.execute(self.db)

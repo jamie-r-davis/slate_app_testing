@@ -1,10 +1,9 @@
 import sys
 import traceback
-from dataclasses import dataclass
 from datetime import date, datetime
 from textwrap import dedent
 
-from sqlalchemy.exc import ProgrammingError
+from sqlalchemy.exc import DatabaseError, ProgrammingError
 
 
 class BaseTestCase:
@@ -14,14 +13,7 @@ class BaseTestCase:
     join_clause = ""
 
     def __init__(
-        self,
-        idx: str,
-        external_id: str,
-        field: str,
-        export: str,
-        expected: str,
-        filters: str = None,
-        **kwargs,
+        self, idx: str, external_id: str, field: str, export: str, expected: str, filters: str = None, **kwargs
     ):
         self.idx = idx
         self.external_id = external_id
@@ -34,15 +26,15 @@ class BaseTestCase:
         self._executed = False
         self._exc = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"<{self.__class__.__name__} idx={self.idx}>"
 
     @property
-    def sql_export(self):
+    def sql_export(self) -> str:
         return f"{self.base}.[{self.field}]"
 
     @property
-    def sql(self):
+    def sql(self) -> str:
         sql = f"""\
         select top 1
           {self.sql_export} as [actual]
@@ -56,15 +48,17 @@ class BaseTestCase:
             sql += f" and {self.filters}"
         return dedent(sql)
 
-    def store_result(self, actual):
+    def store_result(self, actual) -> None:
         if isinstance(actual, datetime):
             actual = actual.strftime("%Y-%m-%d %H:%M:%S")
         self.actual = actual
         self._executed = True
 
     @property
-    def passed(self):
+    def passed(self) -> bool:
         equivalencies = {
+            "": "",
+            " ": "",
             "None": "",
             0: "No",
             1: "Yes",
@@ -99,7 +93,7 @@ class BaseTestCase:
                 return expected == self.actual
         return converted == self.expected
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "idx": self.idx,
             "status": self.status,
@@ -111,7 +105,7 @@ class BaseTestCase:
         }
 
     @property
-    def status(self):
+    def status(self) -> str:
         if self._exc:
             return "Error"
         if self._executed:
@@ -120,17 +114,13 @@ class BaseTestCase:
             return "Fail"
         return "Untested"
 
-    def execute(self, db):
+    def execute(self, db) -> None:
         try:
             result = db.execute(self.sql).first()
-        except ProgrammingError as e:
+        except (DatabaseError, ProgrammingError) as e:
             type_, value_, traceback_ = sys.exc_info()
-            exception = traceback.format_exception(
-                type_, value_, traceback_, chain=True
-            )
-            actual = next(
-                filter(lambda x: not x.startswith(" "), exception[1:])
-            ).strip()
+            exception = traceback.format_exception(type_, value_, traceback_, chain=True)
+            actual = next(filter(lambda x: not x.startswith(" "), exception[1:])).strip()
             self._exc = e
         else:
             if result is None:
@@ -147,7 +137,7 @@ class BaseTestCase:
 
 class FieldTestCase(BaseTestCase):
     @property
-    def sql_export(self):
+    def sql_export(self) -> str:
         exports = {
             "": f"(select string_agg([value], ', ') within group (order by [value]) from dbo.getfieldextendedmultitable({self.base}.[id], '{self.field}'))",
             "export 1": f"(select string_agg([value], ', ') within group (order by [value]) from dbo.getfieldexportmultitable({self.base}.[id], '{self.field}'))",
@@ -173,7 +163,7 @@ class Application(BaseTestCase):
     record = "application"
 
     @property
-    def sql_export(self):
+    def sql_export(self) -> str:
         if self.field == "round":
             return "(select [name] from [lookup.round] where [id] = a.[round])"
         if self.field == "period":
@@ -232,12 +222,10 @@ class Relation(BaseTestCase):
     join_clause = "join [relation] r on r.[record] = p.[id]"
 
     @property
-    def sql_export(self):
+    def sql_export(self) -> str:
         overridden_fields = ["education_level", "type"]
         if self.field in overridden_fields:
-            return (
-                f"(select [value] from [lookup.prompt] where [id] = r.[{self.field}])"
-            )
+            return f"(select [value] from [lookup.prompt] where [id] = r.[{self.field}])"
         return super().sql_export
 
 
@@ -271,7 +259,7 @@ class School(BaseTestCase):
     join_clause = "join school s on s.[record] = p.[id]"
 
     @property
-    def sql_export(self):
+    def sql_export(self) -> str:
         export = super().sql_export
         if self.field == "degree":
             return f"(select [value] from [lookup.prompt] where [id] = {export})"
@@ -326,7 +314,7 @@ class TestScore(BaseTestCase):
     """
 
 
-def build_case(destination, **kwargs):
+def build_case(destination: str, **kwargs) -> BaseTestCase:
     destinations = {
         "activity": ApplicationActivity,
         "address": Address,

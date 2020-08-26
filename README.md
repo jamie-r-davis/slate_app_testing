@@ -8,8 +8,10 @@ To use the app, set the following environment variables. A `.env` file can be pl
 
 | Variable | Notes |
 |---|---|
+| TEST_PLAN | One of ['commonapp', 'coalition', 'commonapp_transfer', 'peoplesoft'] |
 | GSPREAD_CREDENTIAL | The absolute path to a google service account json credential |
 | GSPREAD_SHEET_KEY | The key of the spreadsheet containing the test cases |
+| GSPREAD_WORKSHEET_NAME | The worksheet name containing the test cases |
 | DB_URL | The connection string for your Slate database |
 
 

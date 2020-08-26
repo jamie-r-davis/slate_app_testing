@@ -15,30 +15,35 @@ class Config:
 
 
 class DefaultConfig(Config):
-    pass
+    TEST_PLAN = "default"
 
 
 class CommonAppConfig(Config):
-    GSPREAD_SHEET_KEY = os.getenv(
-        "COMMONAPP_SHEET_KEY", "1kZZbbbnzxGBDsLIM_2XX27wfHQL_rnSw6FfhTRkXD2s"
-    )
+    TEST_PLAN = "commonapp"
+    GSPREAD_SHEET_KEY = os.getenv("COMMONAPP_SHEET_KEY", "1kZZbbbnzxGBDsLIM_2XX27wfHQL_rnSw6FfhTRkXD2s")
+
+
+class PSConfig(CommonAppConfig):
+    TEST_PLAN = "peoplesoft"
+    GSPREAD_WORKSHEET_NAME = "PS Test Cases"
+    DB_URL = os.getenv("PS_DB_URL") or os.getenv("DB_URL")
+    COL_INDEXES = {"status": 2, "actual": 8, "comment": 9}
 
 
 class CoalitionConfig(Config):
-    GSPREAD_SHEET_KEY = os.getenv(
-        "COALITION_SHEET_KEY", "1brajclYopMFzAycKeOKWf5-CZk417XZL1C0QH4TRUUA"
-    )
+    TEST_PLAN = "coalition"
+    GSPREAD_SHEET_KEY = os.getenv("COALITION_SHEET_KEY", "1brajclYopMFzAycKeOKWf5-CZk417XZL1C0QH4TRUUA")
 
 
 class CommonAppTransferConfig(Config):
-    GSPREAD_SHEET_KEY = os.getenv(
-        "COMMONAPP_TRANSFER_SHEET_KEY", "1IPQPZec3R42AEjT0DGGfCs35c6wkmeKO31p071kJLKM"
-    )
+    TEST_PLAN = "commonapp_transfer"
+    GSPREAD_SHEET_KEY = os.getenv("COMMONAPP_TRANSFER_SHEET_KEY", "1IPQPZec3R42AEjT0DGGfCs35c6wkmeKO31p071kJLKM")
 
 
 app_config = {
     "commonapp": CommonAppConfig,
     "coalition": CoalitionConfig,
     "commonapp_transfer": CommonAppTransferConfig,
+    "peoplesoft": PSConfig,
     None: DefaultConfig,
 }
