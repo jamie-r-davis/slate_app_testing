@@ -27,7 +27,7 @@ class PSConfig(CommonAppConfig):
     TEST_PLAN = "peoplesoft"
     GSPREAD_WORKSHEET_NAME = "PS Test Cases"
     DB_URL = os.getenv("PS_DB_URL") or os.getenv("DB_URL")
-    COL_INDEXES = {"status": 2, "actual": 8, "comment": 9}
+    COL_INDEXES = {"status": 2, "actual": 9, "comment": 10}
 
 
 class CoalitionConfig(Config):
