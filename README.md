@@ -16,14 +16,19 @@ To use the app, set the following environment variables. A `.env` file can be pl
 
 
 ## Usage
-By default, only cases marked as 'Untested' or 'Fail' will be executed.
+Run a test plan by calling run.py with the test plan name (eg, `commonapp`, `commonapp_transfer`, `coalition`, `peoplesoft`). By default, only cases marked as 'Untested', 'Error', or 'Fail' will be executed.
 
 To run test cases, use `run.py`:
 ```bash
-python run.py
+python run.py {test_plan} run
 ``` 
 
 Use the `--loop` option to have tests executed every 3 minutes:
 ```bash
-python run.py --loop
+python run.py {test_plan} run --loop
+```
+
+To reset all test cases for a given test plan:
+```bash
+python run.py {test_plan} reset
 ```
