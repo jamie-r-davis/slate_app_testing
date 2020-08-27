@@ -6,7 +6,14 @@ from .cases import BaseTestCase
 
 class PSTestCase(BaseTestCase):
     def __init__(
-        self, idx: str, adm_appl_nbr: str, field: str, expected: str, export: str = "", filters: str = None, **kwargs
+        self,
+        idx: str,
+        adm_appl_nbr: str,
+        field: str,
+        expected: str,
+        export: str = "",
+        filters: str = None,
+        **kwargs,
     ):
         super().__init__(idx, adm_appl_nbr, field, export, expected, filters)
         self.adm_appl_nbr = adm_appl_nbr
@@ -177,7 +184,13 @@ class Person(PSTestCase):
 class PersonDataEffdt(PSTestCase):
     record = "ps_pers_data_effdt"
     base = "pde"
-    join_clause = "join ps_pers_data_effdt pde on a.emplid = pde.emplid and pde.effdt = (select max(effdt) from ps_pers_data_effdt where emplid = pde.emplid)"
+    join_clause = dedent(
+        """\
+        join ps_pers_data_effdt pde on 
+          a.emplid = pde.emplid and 
+          pde.effdt = (select max(effdt) from ps_pers_data_effdt where emplid = pde.emplid)
+        """
+    )
 
 
 class Phone(PSTestCase):
@@ -189,7 +202,25 @@ class Phone(PSTestCase):
 class AdditionalData(PSTestCase):
     record = "ps_m_ra_adl_data"
     base = "adl"
-    join_clause = "join ps_m_ra_adl_data adl on a.emplid = adl.emplid and a.adm_appl_nbr = adl.adm_appl_nbr and a.acad_career = adl.acad_career and a.stdnt_car_nbr = adl.stdnt_car_nbr"
+    join_clause = dedent(
+        """\
+        join ps_m_ra_adl_data adl on 
+          a.emplid = adl.emplid and 
+          a.adm_appl_nbr = adl.adm_appl_nbr and 
+          a.acad_career = adl.acad_career and 
+          a.stdnt_car_nbr = adl.stdnt_car_nbr
+        join ps_m_ra_adldata_tb q on
+          adl.m_ra_question_id = q.m_ra_question_id and
+          q.adm_appl_ctr = a.adm_appl_ctr
+        """
+    )
+
+    @property
+    def sql_export(self) -> str:
+        question_fields = ["descr", "label", "category"]
+        if self.field in question_fields:
+            return f"q.{self.field}"
+        return super().sql_export
 
 
 class NationalID(PSTestCase):
@@ -241,14 +272,17 @@ class Ethnicity(PSTestCase):
           from PS_ETHNICITY_DTL x
           where
             x.emplid = a.emplid
-        ) e"""
+        ) e
+        """
     )
 
 
 class School(PSTestCase):
     record = "ps_ext_acad_data"
     base = "s"
-    join_clause = "join ps_ext_acad_data s on a.emplid = s.emplid and s.ext_data_nbr = 1"
+    join_clause = (
+        "join ps_ext_acad_data s on a.emplid = s.emplid and s.ext_data_nbr = 1"
+    )
 
 
 class RatingComponent(PSTestCase):
@@ -260,8 +294,7 @@ class RatingComponent(PSTestCase):
           r.adm_appl_nbr = a.adm_appl_nbr and 
           r.emplid = a.emplid and 
           r.acad_career = a.acad_career and 
-          r.stdnt_car_nbr = a.stdnt_car_nbr and 
-          r.evaluation_code in ('UGAAPPLF', 'UGAAPPLT')
+          r.stdnt_car_nbr = a.stdnt_car_nbr
         """
     )
 
@@ -283,7 +316,25 @@ class EvaluationCode(PSTestCase):
 class Relationship(PSTestCase):
     record = "ps_relationships"
     base = "r"
-    join_clause = "join ps_relationships r on r.emplid = a.emplid"
+    join_clause = dedent(
+        """\
+        cross apply (
+          select
+            *
+          from ps_relationships x
+          where
+            x.emplid = a.emplid and
+            x.relationship_nbr = (
+              select max(relationship_nbr) 
+              from ps_relationships 
+              where 
+                name = x.name and 
+                emplid = x.emplid and
+                people_relation = x.people_relation
+            )
+        ) r
+        """
+    )
 
 
 class Residency(PSTestCase):
@@ -318,9 +369,9 @@ class AcademicInterests(PSTestCase):
         """\
         cross apply (
           select
-            listagg(ext_subject_area, ', ') within group (order by ext_subject_area)
-            max(effdt),
-            max(ls_data_source)
+            listagg(ext_subject_area, ', ') within group (order by ext_subject_area) as ext_subject_area,
+            max(effdt) as effdt,
+            max(ls_data_source) as ls_data_source
           from ps_adm_interests x
           where
             x.emplid = a.emplid and
@@ -329,6 +380,43 @@ class AcademicInterests(PSTestCase):
           ) i
         """
     )
+
+
+class RecruitmentCategory(PSTestCase):
+    record = "ps_adm_appl_rcr_ca"
+    base = "c"
+    join_clause = dedent(
+        """\
+        join ps_adm_appl_rcr_ca c on 
+          c.emplid = a.emplid and 
+          c.adm_appl_nbr = a.adm_appl_nbr and 
+          c.stdnt_car_nbr = a.stdnt_car_nbr and
+          c.acad_career = a.acad_career
+        """
+    )
+
+
+class HonorsAndAwards(PSTestCase):
+    record = "ps_honor_award_cs"
+    base = "awd"
+    join_clause = "join ps_honor_award_cs awd on a.emplid = awd.emplid"
+
+
+class Languages(PSTestCase):
+    record = "ps_accomplishments"
+    base = "l"
+    join_clause = dedent(
+        """\
+        join ps_accomplishments l on a.emplid = l.emplid
+        join ps_scc_lang_vw x on l.accomplishment = x.accomplishment
+        """
+    )
+
+    @property
+    def sql_export(self) -> str:
+        if self.field == "descr":
+            return "x.descr"
+        return super().sql_export
 
 
 def build_case(destination: str, **kwargs) -> PSTestCase:
@@ -345,8 +433,8 @@ def build_case(destination: str, **kwargs) -> PSTestCase:
         "ethnicity": Ethnicity,
         "evaluation code": EvaluationCode,
         "extracurricular activity": ExtraCurricularActivity,
-        # todo: honors & awards
-        # todo: languages
+        "honors & awards": HonorsAndAwards,
+        "languages": Languages,
         "residency": Residency,
         "relationship": Relationship,
         "other name": OtherName,
@@ -357,7 +445,7 @@ def build_case(destination: str, **kwargs) -> PSTestCase:
         "primary name": PrimaryName,
         "program data": AdmApplProg,
         "rating component": RatingComponent,
-        # todo: recruitment category
+        "recruitment category": RecruitmentCategory,
         "school": School,
         "ssn": NationalID,
         "visa": Visa,
