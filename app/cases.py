@@ -212,6 +212,32 @@ class Interest(BaseTestCase):
     record = "interests"
     join_clause = "join [interest] int on int.[record] = p.[id]"
 
+    @property
+    def sql_export(self) -> str:
+        record_fields = [
+            "name",
+            "from",
+            "to",
+            "frequency",
+            "description",
+            "rank",
+            "role",
+            "city",
+            "region",
+            "country",
+            "type",
+            "frequency_hrs",
+            "frequency_wks",
+        ]
+        exports = {
+            "": f"(select string_agg([value], ', ') within group (order by [value]) from dbo.getfieldextendedmultitable({self.base}.[id], '{self.field}'))",
+            "export 1": f"(select string_agg([value], ', ') within group (order by [value]) from dbo.getfieldexportmultitable({self.base}.[id], '{self.field}'))",
+            "export 2": f"(select string_agg([value], ', ') within group (order by [value]) from dbo.getfieldexport2multitable({self.base}.[id], '{self.field}'))",
+        }
+        if self.field in record_fields:
+            return super().sql_export
+        return exports[self.export.lower()]
+
 
 class InterestField(FieldTestCase):
     base = "int"
