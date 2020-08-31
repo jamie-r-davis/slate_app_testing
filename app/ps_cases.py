@@ -419,12 +419,73 @@ class Languages(PSTestCase):
         return super().sql_export
 
 
+class Checklist(PSTestCase):
+    record = "ps_person_checklist"
+    base = "c"
+    join_clause = dedent(
+        """\
+        join ps_var_data_admp v on
+          a.emplid = v.common_id and
+          a.acad_career = v.acad_career and
+          a.stdnt_car_nbr = v.stdnt_car_nbr and
+          a.adm_appl_nbr = v.adm_appl_nbr and
+          v.appl_prog_nbr = 0
+        join ps_person_checklst c on
+          c.admin_function = 'ADMP' and
+          c.common_id = v.common_id and
+          c.var_data_seq = v.var_data_seq
+        """
+    )
+
+
+class ChecklistItem(PSTestCase):
+    record = "ps_person_chk_item"
+    base = "i"
+    join_clause = dedent(
+        """\
+        join ps_var_data_admp v on
+          a.emplid = v.common_id and
+          a.acad_career = v.acad_career and
+          a.stdnt_car_nbr = v.stdnt_car_nbr and
+          a.adm_appl_nbr = v.adm_appl_nbr and
+          v.appl_prog_nbr = 0
+        join ps_person_checklst c on
+          c.admin_function = 'ADMP' and
+          c.common_id = v.common_id and
+          c.var_data_seq = v.var_data_seq
+        join ps_person_chk_item i on
+          i.common_id = c.common_id and
+          i.seq_3c = c.seq_3c
+        """
+    )
+
+    @property
+    def sql_export(self) -> str:
+        checklist_fields = [
+            "admin_function",
+            "checklist_cd",
+        ]
+        if self.field in checklist_fields:
+            return f"c.{self.field}"
+        if self.field == "item_descr":
+            return dedent(
+                """(
+                  select x.descr 
+                  from ps_cklsitm_tbl x 
+                  where 
+                    x.chklst_item_cd = i.chklst_item_cd and 
+                    x.effdt = (select max(effdt) from ps_cklstitm_tbl where chklst_item_cd = x.chklst_item_cd)
+                )"""
+            )
+        return super().sql_export
+
+
 def build_case(destination: str, **kwargs) -> PSTestCase:
     destinations = {
         "additional data": AdditionalData,
         "application data": AdmApplData,
-        # todo: checklist
-        # todo: checklist item
+        "checklist": Checklist,
+        "checklist item": ChecklistItem,
         "academic interests": AcademicInterests,
         "citizenship": Citizenship,
         # todo: comm code
