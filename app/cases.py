@@ -249,6 +249,12 @@ class Person(BaseTestCase):
     base = "p"
     record = "person"
 
+    @property
+    def sql_export(self) -> str:
+        if self.field == "ssn":
+            return "case p.ssn when null then '' else 'XXX-XX-' + substring(p.ssn, 6, 4) end"
+        return super().sql_export
+
 
 class PersonField(FieldTestCase):
     base = "p"
@@ -355,15 +361,36 @@ class TestScore(BaseTestCase):
     """
 
 
+class CommonAppTransferAward(FieldTestCase):
+    base = "e"
+    record = "capx award"
+    join_clause = "join [entity] e on e.[record] = a.[id] and e.[entity] = '82c27b15-8f87-429c-a8f8-453484a4a101'"
+
+
+class CommonAppTansferHonor(FieldTestCase):
+    base = "e"
+    record = "capx hon"
+    join_clause = "join [entity] e on e.[record] = a.[id] and e.[entity] = 'a2367bbe-37f6-4b23-aadd-1297bc7bbf26'"
+
+
+class Job(BaseTestCase):
+    base = "j"
+    record = "job"
+    join_clause = "join [job] j on j.[record] = p.[id]"
+
+
 def build_case(destination: str, **kwargs) -> BaseTestCase:
     destinations = {
         "activity": ApplicationActivity,
         "address": Address,
         "application": Application,
         "application field": ApplicationField,
+        "awards (capx)": CommonAppTransferAward,
         "cbos": CBO,
         "device": Device,
+        "honors (capx)": CommonAppTansferHonor,
         "honors & awards": HonorsAndAwards,
+        "job": Job,
         "interests": Interest,
         "interests field": InterestField,
         "person": Person,
