@@ -24,6 +24,10 @@ class GoogleSheetsPublisher:
 
     @classmethod
     def from_config(cls, config):
+        if config.TEST_MODE == "peoplesoft":
+            config.GSPREAD_WORKSHEET_NAME = "PS Test Cases"
+        else:
+            config.GSPREAD_WORKSHEET_NAME = "Test Cases"
         return cls(
             credential_path=config.GSPREAD_CREDENTIAL,
             sheet_key=config.GSPREAD_SHEET_KEY,

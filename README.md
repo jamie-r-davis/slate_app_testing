@@ -8,11 +8,22 @@ To use the app, set the following environment variables. A `.env` file can be pl
 
 | Variable | Notes |
 |---|---|
-| TEST_PLAN | One of ['commonapp', 'coalition', 'commonapp_transfer', 'peoplesoft'] |
+| DB_URL | The connection string for your Slate database |
+| PS_DB_URL | The connection string for your PeopleSoft database (optional) |
 | GSPREAD_CREDENTIAL | The absolute path to a google service account json credential |
 | GSPREAD_SHEET_KEY | The key of the spreadsheet containing the test cases |
 | GSPREAD_WORKSHEET_NAME | The worksheet name containing the test cases |
-| DB_URL | The connection string for your Slate database |
+
+Optional environment variables that can be set:
+
+| Variable | Notes |
+| --- | --- |
+| PS_DB_URL | The connection string for your PeopleSoft database. This is required if testing in PeopleSoft. |
+| DEBUG | `1` or `0`. This will turn on debug features. |
+| COMMONAPP_SHEET_KEY | The sheet key for CommonApp First-Year tests |
+| COALITION_SHEET_KEY | The sheet key for Coalition tests |
+| COMMONAPP_TRANSFER_SHEET_KEY | The sheet key for CommonApp Transfer tests |
+
 
 
 ## Usage
@@ -31,4 +42,10 @@ python run.py {test_plan} run --loop
 To reset all test cases for a given test plan:
 ```bash
 python run.py {test_plan} reset
+```
+
+If your test plan has PeopleSoft Test cases on a worksheet named `PS Test Cases`, you can run the test plan in PeopleSoft mode. Make sure to set the appropriate environment variables.
+
+```bash
+python run.py {test_plan} run --mode=peoplesoft
 ```

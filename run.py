@@ -18,10 +18,13 @@ def cli(ctx, test_plan):
 
 @cli.command()
 @click.option("--loop", is_flag=True)
+@click.option("--mode")
 @click.pass_context
-def run(ctx, loop):
+def run(ctx, loop, mode=None):
     plan = ctx.obj["TEST_PLAN"]
     config = app_config[plan]
+    if mode:
+        config.TEST_MODE = mode
     app = create_app(config)
     if loop:
         while True:

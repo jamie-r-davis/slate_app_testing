@@ -14,13 +14,19 @@ class TestExecutor:
         self.results = []
         self.test_cases = []
         self.case_builder = (
-            ps_build_case if config.TEST_PLAN == "peoplesoft" else build_case
+            ps_build_case
+            if config.TEST_PLAN == "peoplesoft" or config.TEST_MODE == "peoplesoft"
+            else build_case
         )
 
     @property
     def db(self):
         if self._db is None:
-            self._db = create_engine(self.config.DB_URL, echo=self.config.DEBUG)
+            if self.config.TEST_MODE == "peoplesoft":
+                db_url = self.config.PS_DB_URL
+            else:
+                db_url = self.config.DB_URL
+            self._db = create_engine(db_url, echo=self.config.DEBUG)
         return self._db
 
     def add_result(self, test_case):

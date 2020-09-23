@@ -86,14 +86,14 @@ class AdmApplProg(PSTestCase):
           pln.appl_prog_nbr = prg.appl_prog_nbr and
           pln.effdt = prg.effdt and
           pln.effseq = prg.effseq
-        left join ps_adm_appl_sbplan s on
-          s.emplid = pln.emplid and
-          s.adm_appl_nbr = pln.adm_appl_nbr and
-          s.acad_career = pln.acad_career and
-          s.appl_prog_nbr = pln.appl_prog_nbr and
-          s.effdt = pln.effdt and
-          s.effseq = pln.effseq and
-          s.acad_plan = pln.acad_plan"""
+        left join ps_adm_appl_sbplan sbp on
+          sbp.emplid = pln.emplid and
+          sbp.adm_appl_nbr = pln.adm_appl_nbr and
+          sbp.acad_career = pln.acad_career and
+          sbp.appl_prog_nbr = pln.appl_prog_nbr and
+          sbp.effdt = pln.effdt and
+          sbp.effseq = pln.effseq and
+          sbp.acad_plan = pln.acad_plan"""
     )
 
     @property
