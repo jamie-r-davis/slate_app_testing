@@ -480,6 +480,16 @@ class ChecklistItem(PSTestCase):
         return super().sql_export
 
 
+class TestScore(PSTestCase):
+    record = "ps_stdnt_test_comp"
+    base = "t"
+    join_clause = dedent(
+        """\
+        join ps_stdnt_test_comp t on t.emplid = a.emplid
+        """
+    )
+
+
 def build_case(destination: str, **kwargs) -> PSTestCase:
     destinations = {
         "additional data": AdditionalData,
@@ -509,6 +519,7 @@ def build_case(destination: str, **kwargs) -> PSTestCase:
         "recruitment category": RecruitmentCategory,
         "school": School,
         "ssn": NationalID,
+        "test component": TestScore,
         "visa": Visa,
     }
     destination_class = destinations.get(destination.lower())
