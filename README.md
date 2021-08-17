@@ -23,7 +23,7 @@ Optional environment variables that can be set:
 | COMMONAPP_SHEET_KEY | The sheet key for CommonApp First-Year tests |
 | COALITION_SHEET_KEY | The sheet key for Coalition tests |
 | COMMONAPP_TRANSFER_SHEET_KEY | The sheet key for CommonApp Transfer tests |
-
+| SLEEP_INTERVAL | The number of seconds between runs when `--loop` flag is set |
 
 
 ## Usage
