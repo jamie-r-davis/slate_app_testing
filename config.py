@@ -12,6 +12,7 @@ class Config:
     GSPREAD_CREDENTIAL = os.getenv("GSPREAD_CREDENTIAL")
     GSPREAD_WORKSHEET_NAME = "Test Cases"
     COL_INDEXES = {"status": 2, "actual": 9, "comment": 10}
+    SLEEP_INTERVAL = int(os.getenv("SLEEP_INTERVAL", 90))
 
 
 class DefaultConfig(Config):

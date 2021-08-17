@@ -30,7 +30,7 @@ def run(ctx, loop, mode=None):
         while True:
             app.run()
             print("Sleeping...")
-            time.sleep(180)
+            time.sleep(config.SLEEP_INTERVAL)
     app.run()
 
 
